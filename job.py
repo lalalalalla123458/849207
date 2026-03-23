@@ -2,13 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import smtplib
 from email.mime.text import MIMEText
+import os
 
-# ===== 邮箱配置 =====
-sender = "你的邮箱@qq.com"
-password = "你的邮箱授权码"
-receiver = "你的邮箱@qq.com"
+# 从GitHub读取邮箱信息
+sender = os.environ.get("EMAIL_USER")
+password = os.environ.get("EMAIL_PASS")
+receiver = sender
 
-# ===== 招聘网站 =====
 urls = {
     "深圳卫健委": "http://wjw.sz.gov.cn/xxgk/rsxx/",
     "深圳人社局": "http://hrss.sz.gov.cn/xxgk/zpgg/"
@@ -33,7 +33,7 @@ def get_jobs():
                     results.append(f"[{name}] {text}\n{href}")
 
         except Exception as e:
-            results.append(f"{name} 抓取失败: {e}")
+            results.append(f"{name} 抓取失败")
 
     return results
 
@@ -44,13 +44,10 @@ def send_email(content):
     msg["From"] = sender
     msg["To"] = receiver
 
-    try:
-        server = smtplib.SMTP_SSL("smtp.qq.com", 465)
-        server.login(sender, password)
-        server.sendmail(sender, receiver, msg.as_string())
-        server.quit()
-    except Exception as e:
-        print("邮件发送失败:", e)
+    server = smtplib.SMTP_SSL("smtp.qq.com", 465)
+    server.login(sender, password)
+    server.sendmail(sender, receiver, msg.as_string())
+    server.quit()
 
 
 if __name__ == "__main__":
@@ -59,6 +56,6 @@ if __name__ == "__main__":
     if jobs:
         content = "\n\n".join(jobs)
     else:
-        content = "今天没有符合条件的新招聘"
+        content = "今天没有新招聘"
 
     send_email(content)
